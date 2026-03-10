@@ -1,15 +1,24 @@
 {
-    "short_name": "FedialgoDemo",
-    "name": "FediAlgo Demo for Mastodon",
+    "short_name": "FediAlgo",
+    "name": "FediAlgo for Mastodon",
+    "description": "A scored, filterable Mastodon home timeline.",
     "icons": [
         {
             "src": "logo.png",
-            "sizes": "512x512",
+            "sizes": "192x192",
             "type": "image/png"
+        },
+        {
+            "src": "logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ],
-    "start_url": "/",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
+    "orientation": "portrait-primary",
     "theme_color": "#000000",
-    "background_color": "#ffffff"
+    "background_color": "#000000"
 }

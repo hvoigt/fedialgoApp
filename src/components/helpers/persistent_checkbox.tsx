@@ -1,9 +1,9 @@
 /*
- * Checkbox that persists its state in local storage.
- * Requires there be a Checkbox somewhere in the component tree w/the same anchor!
+ * Checkbox helpers: persistent (localStorage) and non-persistent (useState) variants.
+ * Requires there be a Tooltip somewhere in the component tree w/the same anchor!
  */
 import Form from "react-bootstrap/Form";
-import { ReactElement } from "react";
+import { ReactElement, useState } from "react";
 
 import { Tooltip } from "react-tooltip";
 
@@ -37,6 +37,50 @@ export default function persistentCheckbox(checkboxName: GuiCheckboxName): State
             onChange={(e) => {
                 setValue(e.target.checked);
             }}
+            style={{fontSize: 14}}
+            type="checkbox"
+        />
+    );
+
+    if (labelAndTooltip.tooltipText) {
+        checkbox = (
+            <a
+                data-tooltip-id={tooltipAnchor}
+                data-tooltip-content={labelAndTooltip.tooltipText}
+                key={`${labelAndTooltip.label}-tooltip-anchor`}
+            >
+                {checkbox}
+            </a>
+        );
+    }
+
+    return [
+        value,
+        checkbox,
+        <Tooltip
+            delayShow={config.timeline.tooltips.defaultTooltipDelayMS}
+            id={tooltipAnchor}
+            place="bottom"
+            style={tooltipZIndex}
+        />
+    ];
+};
+
+
+/**
+ * Same as persistentCheckbox but uses useState — state resets to the config default on every page load.
+ */
+export function nonPersistentCheckbox(checkboxName: GuiCheckboxName): StateWithComponent {
+    const labelAndTooltip: GuiCheckboxLabel = config.timeline.guiCheckboxLabels[checkboxName];
+    const tooltipAnchor = labelAndTooltip.anchor || CHECKBOX_TOOLTIP_ANCHOR;
+    const [value, setValue] = useState<boolean>(labelAndTooltip.defaultValue);
+    let checkbox: ReactElement;
+
+    checkbox = (
+        <Form.Check
+            checked={value}
+            label={labelAndTooltip.label}
+            onChange={(e) => setValue(e.target.checked)}
             style={{fontSize: 14}}
             type="checkbox"
         />

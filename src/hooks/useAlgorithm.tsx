@@ -7,7 +7,7 @@ import TheAlgorithm, { GET_FEED_BUSY_MSG, AgeIn, Toot, isAccessTokenRevokedError
 import { createRestAPIClient, mastodon } from "masto";
 import { useError } from "../components/helpers/ErrorHandler";
 
-import persistentCheckbox from "../components/helpers/persistent_checkbox";
+import persistentCheckbox, { nonPersistentCheckbox } from "../components/helpers/persistent_checkbox";
 import { addMimeExtensionsToServer, type MastodonServer } from "../helpers/mastodon_helpers";
 import { Events } from "../helpers/string_helpers";
 import { getLogger } from "../helpers/log_helpers";
@@ -63,12 +63,12 @@ export default function AlgorithmProvider(props: PropsWithChildren) {
     // TODO: this doesn't make any API calls yet, right?
     const api = createRestAPIClient({accessToken: user.access_token, url: user.server});
 
-    // Checkboxes with persistent storage that require somewhat global state
-    const [allowMultiSelect, allowMultiSelectCheckbox] = persistentCheckbox(GuiCheckboxName.allowMultiSelect);
-    const [alwaysShowFollowed, alwaysShowFollowedCheckbox] = persistentCheckbox(GuiCheckboxName.alwaysShowFollowed);
-    const [hideSensitive, hideSensitiveCheckbox] = persistentCheckbox(GuiCheckboxName.hideSensitive);
-    const [shouldAutoUpdate, shouldAutoUpdateCheckbox] = persistentCheckbox(GuiCheckboxName.autoupdate);
-    const [showFilterHighlights, showFilterHighlightsCheckbox] = persistentCheckbox(GuiCheckboxName.showFilterHighlights);
+    // Checkboxes that reset to config defaults on every page load (not persisted)
+    const [allowMultiSelect, allowMultiSelectCheckbox] = nonPersistentCheckbox(GuiCheckboxName.allowMultiSelect);
+    const [alwaysShowFollowed, alwaysShowFollowedCheckbox] = nonPersistentCheckbox(GuiCheckboxName.alwaysShowFollowed);
+    const [hideSensitive, hideSensitiveCheckbox] = nonPersistentCheckbox(GuiCheckboxName.hideSensitive);
+    const [shouldAutoUpdate, shouldAutoUpdateCheckbox] = nonPersistentCheckbox(GuiCheckboxName.autoupdate);
+    const [showFilterHighlights, showFilterHighlightsCheckbox] = nonPersistentCheckbox(GuiCheckboxName.showFilterHighlights);
 
     // Pass startedLoadAt as an arg every time because managing the react state of the last load is tricky
     const setLoadState = (newIsLoading: boolean, startedLoadAt: Date) => {
