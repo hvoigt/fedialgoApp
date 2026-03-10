@@ -24,7 +24,7 @@ This file provides context for AI assistants working in this codebase.
 | Routing | React Router DOM v7 (HashRouter — required for GitHub Pages) |
 | Mastodon API | `masto` v7 |
 | State management | React Context API |
-| PWA | Workbox service worker |
+| PWA | Workbox service worker + iOS/Android meta tags + `assets/manifest.json` |
 | Testing | Jest + React Testing Library (configured, no tests written yet) |
 | Linting | ESLint 9.x flat config + typescript-eslint |
 | Deployment | GitHub Actions → GitHub Pages (`docs/` directory) |
@@ -77,7 +77,7 @@ fedialgoApp/
 │   ├── App.css / index.css    # Minor overrides
 │   │
 │   ├── pages/
-│   │   ├── Feed.tsx           # Main timeline page — infinite scroll, algorithm controls
+│   │   ├── Feed.tsx           # Main timeline page — tab nav (Feed|Settings), infinite scroll
 │   │   ├── LoginPage.tsx      # Server selection + OAuth login UI
 │   │   └── CallbackPage.tsx   # OAuth callback handler
 │   │
@@ -107,7 +107,7 @@ fedialgoApp/
 │   │   ├── helpers/           # Utility UI components
 │   │   │   ├── ErrorHandler.tsx    # Global error context (useError hook)
 │   │   │   ├── LoadingSpinner.tsx
-│   │   │   ├── persistent_checkbox.tsx
+│   │   │   ├── persistent_checkbox.tsx  # persistentCheckbox (localStorage) + nonPersistentCheckbox (useState)
 │   │   │   ├── JsonModal.tsx
 │   │   │   ├── Confirmation.tsx
 │   │   │   ├── TooltippedLink.tsx
@@ -190,9 +190,23 @@ logger.warn("warning");
 logger.error("error", errorObj);
 ```
 
+### Feed Layout
+
+`Feed.tsx` uses a **tab-based single-column layout** (no side-by-side columns at any screen size):
+
+- **Feed tab** (default): timeline toots, thread viewer, load controls, "Create New Toot" button
+- **Settings tab**: algorithm checkboxes, WeightSetter, filters, trending info, debug info
+
+The tab bar is sticky at the top (`position: sticky; top: 0`). Both panels stay in the DOM (toggled via `display: none`) so the IntersectionObserver for infinite scroll is never disconnected.
+
 ### Persistent User Preferences
 
-Use `persistentCheckbox` from `components/helpers/persistent_checkbox` for checkboxes that survive page reloads. Configuration-level persistent state lives in `useLocalStorage.tsx`.
+Two checkbox helpers exist in `components/helpers/persistent_checkbox`:
+
+- `persistentCheckbox(name)` — state saved to `localStorage`, survives page reloads. Use for pure UI display prefs (e.g. `showLinkPreviews`).
+- `nonPersistentCheckbox(name)` — uses `useState` with the `config` default value; resets on every page load. Used in `useAlgorithm.tsx` for algorithm-related settings so the feed always starts from defaults.
+
+Configuration-level persistent state (server URL, OAuth tokens) lives in `useLocalStorage.tsx`.
 
 ### Styling
 

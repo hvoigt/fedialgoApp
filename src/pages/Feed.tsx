@@ -3,7 +3,7 @@
  * weighting values.
  */
 import React, { CSSProperties, useEffect, useRef, useState } from "react";
-import { Button, Col, Container, Row } from "react-bootstrap";
+import { Button, Container } from "react-bootstrap";
 
 import TheAlgorithm, { Toot, optionalSuffix } from "fedialgo";
 import { Tooltip } from "react-tooltip";
@@ -43,6 +43,7 @@ import {
 const LOAD_BUTTON_SEPARATOR = ' ● ';
 const logger = getLogger("Feed");
 
+type ActiveTab = 'feed' | 'settings';
 
 /** Component to display the FediAlgo user's timeline. */
 export default function Feed() {
@@ -60,6 +61,7 @@ export default function Feed() {
     } = useAlgorithm();
 
     // State variables
+    const [activeTab, setActiveTab] = useState<ActiveTab>('feed');
     const [isLoadingThread, setIsLoadingThread] = useState(false);
     const [numDisplayedToots, setNumDisplayedToots] = useState<number>(config.timeline.defaultNumDisplayedToots);
     const [prevScrollY, setPrevScrollY] = useState(0);
@@ -69,14 +71,11 @@ export default function Feed() {
 
     // Checkboxes for persistent user settings state variables
     // TODO: the returned checkboxTooltip is shared by all tooltips which kind of sucks
-    // TODO: kind of sucks that these checkboxes are instantiated here and the others are in useAlgorithm
     const [showLinkPreviews, showLinkPreviewsCheckbox, checkboxTooltip] = persistentCheckbox(GuiCheckboxName.showLinkPreviews);
-    const [isControlPanelSticky, isControlPanelStickyCheckbox] = persistentCheckbox(GuiCheckboxName.stickToTop);
 
     // Computed variables etc.
     const bottomRef = useRef<HTMLDivElement>(null);
     const isBottom = useOnScreen(bottomRef);
-    const leftColStyle: CSSProperties = isControlPanelSticky ? {} : {position: "relative"};
     const numShownToots = Math.max(config.timeline.defaultNumDisplayedToots, numDisplayedToots);
 
     // Reset all state except for the user and server
@@ -130,7 +129,7 @@ export default function Feed() {
         <Container fluid style={{height: "auto"}}>
             <ReplyModal setShow={setShowNewTootModal} show={showNewTootModal}/>
 
-            <Row style={waitOrDefaultCursor(isLoadingThread)}>
+            <div style={waitOrDefaultCursor(isLoadingThread)}>
                 {/* Tooltip options: https://react-tooltip.com/docs/options */}
                 <Tooltip
                     border={"solid"}
@@ -145,76 +144,36 @@ export default function Feed() {
 
                 {checkboxTooltip}
 
-                <Col md={6} xs={12} >
-                    {/* TODO: maybe the inset-inline-end property could be used to allow panel to scroll to length but still stick? */}
-                    <div className="sticky-top left-col-scroll" style={leftColStyle}>
-                        <div style={stickySwitchContainer}>
-                            {isControlPanelStickyCheckbox}
-                            {showLinkPreviewsCheckbox}
-                            {hideSensitiveCheckbox}
-                            {shouldAutoUpdateCheckbox}
-                        </div>
+                {/* Tab navigation */}
+                <div className="feed-tab-bar">
+                    <button
+                        className={`feed-tab${activeTab === 'feed' ? ' feed-tab--active' : ''}`}
+                        onClick={() => setActiveTab('feed')}
+                    >
+                        Feed
+                    </button>
+                    <button
+                        className={`feed-tab${activeTab === 'settings' ? ' feed-tab--active' : ''}`}
+                        onClick={() => setActiveTab('settings')}
+                    >
+                        Settings
+                    </button>
+                </div>
 
-                        {algorithm && <WeightSetter />}
-                        {algorithm && <FeedFiltersAccordionSection />}
-                        {algorithm && <TrendingInfo />}
-                        {algorithm && <ExperimentalFeatures />}
+                {/* Feed tab — kept in DOM at all times so IntersectionObserver and scroll state are preserved */}
+                <div style={{display: activeTab === 'feed' ? 'block' : 'none'}}>
+                    {(thread.length > 0) &&
+                        <TopLevelAccordion onExited={() => setThread([])} startOpen={true} title="Thread">
+                            {thread.map((toot) => (
+                                <StatusComponent
+                                    fontColor="black"
+                                    key={toot.uri}
+                                    showLinkPreviews={showLinkPreviews}
+                                    status={toot}
+                                />
+                            ))}
+                        </TopLevelAccordion>}
 
-                        {(thread.length > 0) &&
-                            <TopLevelAccordion onExited={() => setThread([])} startOpen={true} title="Thread">
-                                {thread.map((toot) => (
-                                    <StatusComponent
-                                        fontColor="black"
-                                        key={toot.uri}
-                                        showLinkPreviews={showLinkPreviews}
-                                        status={toot}
-                                    />
-                                ))}
-                            </TopLevelAccordion>}
-
-                        <div style={stickySwitchContainer}>
-                            {isLoading
-                                ? <LoadingSpinner message={algorithm?.loadingStatus} style={loadingMsgStyle} />
-                                : <p style={loadingMsgStyle}>
-                                      {footerMsg} (
-                                          {<a onClick={reset} style={resetLinkStyle}>clear all data and reload</a>}
-                                      )
-                                  </p>}
-
-                            <p style={scrollStatusMsg} className="d-none d-sm-block">
-                                {TheAlgorithm.isDebugMode
-                                    ? `Displaying ${numDisplayedToots} Toots (Scroll: ${scrollPercentage.toFixed(1)}%)`
-                                    : <BugReportLink />}
-                            </p>
-                        </div>
-
-                        <div className="d-grid gap-2" style={newTootButton}>
-                            <Button
-                                className={TEXT_CENTER_P2}
-                                onClick={() => setShowNewTootModal(true)}
-                                variant="outline-secondary"
-                            >
-                                {`Create New Toot`}
-                            </Button>
-                        </div>
-
-                        {algorithm && <ApiErrorsPanel />}
-
-                        {TheAlgorithm.isDebugMode &&
-                            <div style={envVarDebugPanel}>
-                                <ul>
-                                    <li><strong>NODE_ENV:</strong> {process.env.NODE_ENV}</li>
-                                    <li><strong>Debug Mode:</strong> {booleanIcon(TheAlgorithm.isDebugMode)}</li>
-                                    <li><strong>Deep Debug:</strong> {booleanIcon(TheAlgorithm.isDeepDebug)}</li>
-                                    <li><strong>Load Test:</strong> {booleanIcon(TheAlgorithm.isLoadTest)}</li>
-                                    <li><strong>Quick Mode:</strong> {booleanIcon(TheAlgorithm.isQuickMode)}</li>
-                                </ul>
-                            </div>}
-                    </div>
-                </Col>
-
-                {/* Feed column */}
-                <Col xs={12} md={6}>
                     {algorithm && !isLoading &&
                         <div style={loadNewTootsText}>
                             <TooltippedLink
@@ -256,8 +215,61 @@ export default function Feed() {
 
                         <div ref={bottomRef} style={bottomRefSpacer} />
                     </div>
-                </Col>
-            </Row>
+
+                    <div className="d-grid gap-2" style={newTootButton}>
+                        <Button
+                            className={TEXT_CENTER_P2}
+                            onClick={() => setShowNewTootModal(true)}
+                            variant="outline-secondary"
+                        >
+                            {`Create New Toot`}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Settings tab */}
+                <div style={{display: activeTab === 'settings' ? 'block' : 'none'}}>
+                    <div style={stickySwitchContainer}>
+                        {showLinkPreviewsCheckbox}
+                        {hideSensitiveCheckbox}
+                        {shouldAutoUpdateCheckbox}
+                    </div>
+
+                    {algorithm && <WeightSetter />}
+                    {algorithm && <FeedFiltersAccordionSection />}
+                    {algorithm && <TrendingInfo />}
+                    {algorithm && <ExperimentalFeatures />}
+
+                    <div style={stickySwitchContainer}>
+                        {isLoading
+                            ? <LoadingSpinner message={algorithm?.loadingStatus} style={loadingMsgStyle} />
+                            : <p style={loadingMsgStyle}>
+                                  {footerMsg} (
+                                      {<a onClick={reset} style={resetLinkStyle}>clear all data and reload</a>}
+                                  )
+                              </p>}
+
+                        <p style={scrollStatusMsg}>
+                            {TheAlgorithm.isDebugMode
+                                ? `Displaying ${numDisplayedToots} Toots (Scroll: ${scrollPercentage.toFixed(1)}%)`
+                                : <BugReportLink />}
+                        </p>
+                    </div>
+
+                    {algorithm && <ApiErrorsPanel />}
+
+                    {TheAlgorithm.isDebugMode &&
+                        <div style={envVarDebugPanel}>
+                            <ul>
+                                <li><strong>NODE_ENV:</strong> {process.env.NODE_ENV}</li>
+                                <li><strong>Debug Mode:</strong> {booleanIcon(TheAlgorithm.isDebugMode)}</li>
+                                <li><strong>Deep Debug:</strong> {booleanIcon(TheAlgorithm.isDeepDebug)}</li>
+                                <li><strong>Load Test:</strong> {booleanIcon(TheAlgorithm.isLoadTest)}</li>
+                                <li><strong>Quick Mode:</strong> {booleanIcon(TheAlgorithm.isQuickMode)}</li>
+                            </ul>
+                        </div>}
+                </div>
+            </div>
         </Container>
     );
 };
@@ -290,9 +302,8 @@ const loadNewTootsText: CSSProperties = {
 
 const newTootButton: CSSProperties = {
     ...verticalContainer,
-    marginTop: "35px",
-    marginLeft: "200px",
-    marginRight: "200px",
+    margin: "35px auto 0 auto",
+    maxWidth: "400px",
 };
 
 const noTootsMsgStyle: CSSProperties = {
