@@ -2,11 +2,13 @@
 
 This file provides context for AI assistants working in this codebase.
 
+**Important**: Keep this file up to date. Whenever you make changes that affect the architecture, directory structure, tech stack, or key patterns described here, update the relevant sections of this file in the same commit.
+
 ## Project Overview
 
 **fedialgo-demo-app-foryoufeed** is a React + TypeScript Progressive Web App that serves as the reference frontend for the [`fedialgo`](https://github.com/michelcrypt4d4mus/fedialgo) library — a client-side Mastodon timeline ranking algorithm. It authenticates users via OAuth, fetches their Mastodon home timeline, runs it through the algorithm, and renders a scored, filterable feed.
 
-- **Live URL**: https://michelcrypt4d4mus.github.io/fedialgo_demo_app_foryoufeed
+- **Live URL**: https://hvoigt.github.io/fedialgoApp
 - **Core dependency**: `fedialgo` (GitHub package, version-pinned: `github:michelcrypt4d4mus/fedialgo#v1.2.39`)
 - **License**: GPL-3.0-only
 
